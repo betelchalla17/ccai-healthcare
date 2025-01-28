@@ -1,19 +1,15 @@
-// Import the Firestore client library
 const Firestore = require('@google-cloud/firestore');
-
-// Define the project ID and initialize Firestore
 const PROJECTID = 'my-project-ccao';
 const firestore = new Firestore({
   projectId: PROJECTID,
 });
 
-// Main function to handle appointment time update
-exports.updateAppointmentTime = async (req, res) => {
+// Main function to handle appointment date update
+exports.updateAppointmentDate = async (req, res) => {
   try {
     // Log the incoming request for debugging
     console.log('Dialogflow Request body:', JSON.stringify(req.body));
 
-    // Retrieve the tag and account ID from the request
     const tag = req.body.fulfillmentInfo?.tag;
     console.log('Tag:', tag);
 
@@ -24,50 +20,58 @@ exports.updateAppointmentTime = async (req, res) => {
     if (tag === 'appointment-reschedule') {
       console.log('Processing appointment reschedule');
 
-      // Extract the new appointment time from the request
-      const newAppointmentTime = req.body.sessionInfo.parameters.new_appointment_time;
-      console.log('New Appointment Time:', newAppointmentTime);
+      const newAppointmentDate = req.body.sessionInfo.parameters.new_appointment_date;
+      console.log('New Appointment Date:', newAppointmentDate);
 
-      // Reference to the Firestore collection for the user
+      // Reference to the user's document
       const userDocRef = firestore.collection('UserInfo').doc(accountID);
-
-      // Fetch the user document from Firestore
       const userDoc = await userDocRef.get();
 
-      // Check if the user exists
+      // Check if the user document exists
       if (!userDoc.exists) {
         console.log('User not found');
         return res.status(404).send({
           fulfillmentResponse: {
             messages: [
-              { text: { text: ['User not found. Please check the account ID and try again.'] } },
+              { 
+                text: { 
+                  text: ['User not found. Please check the account ID and try again.'] 
+                } 
+              },
             ],
           },
         });
       }
 
-      console.log('User found. Updating appointment time.');
+      console.log('User found. Updating appointment date.');
 
-      // Update the appointment_time field in Firestore with the new appointment time
-      await userDocRef.update({ appointment_time: newAppointmentTime });
+      // Update the appointment date in Firestore
+      await userDocRef.update({ appointment_date: newAppointmentDate });
 
       console.log('Appointment date updated successfully');
       return res.status(200).send({
         fulfillmentResponse: {
           messages: [
-            { text: { text: ['Your appointment has been rescheduled successfully.'] } },
+            { 
+              text: { 
+                text: ['Your appointment has been rescheduled successfully.'] 
+              } 
+            },
           ],
         },
       });
     }
-
   } catch (error) {
-    // Log the error and return a server error response
+    // Handle errors and log them
     console.error('Error updating appointment date:', error);
     return res.status(500).send({
       fulfillmentResponse: {
         messages: [
-          { text: { text: ['An internal server error occurred. Please try again later.'] } },
+          { 
+            text: { 
+              text: ['An internal server error occurred. Please try again later.'] 
+            } 
+          },
         ],
       },
     });
